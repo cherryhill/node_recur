@@ -1,0 +1,6 @@
+recur own nodes:
+  title: 'Recur own nodes'
+  description: 'Can recur nodes that the user is an author of.'
+recur all nodes:
+  title: 'Recur all nodes'
+  description: 'Can recur all published nodes.'

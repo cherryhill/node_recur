@@ -1,0 +1,18 @@
+node.type.*.third_party.node_recur:
+  type: mapping
+  mapping:
+    enabled:
+      type: boolean
+      label: 'Enable recurring for this node type'
+    node_form:
+      type: boolean
+      label: 'Display recur options on node add form'
+    allow_past_dates:
+      type: boolean
+      label: 'Allow dates in the past'
+    max_future_date_span:
+      type: string
+      label: 'Max recurring duration'
+    date_field:
+      type: string
+      label: 'Date field'

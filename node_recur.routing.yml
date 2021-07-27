@@ -1,0 +1,21 @@
+node_recur.recur:
+  path: 'node/{node}/recur'
+  defaults:
+    _form: 'Drupal\node_recur\Form\NodeRecurForm'
+    _title_callback: 'node_recur_menu_title_callback'
+  requirements:
+    _custom_access: 'node_recur_node_recur_form_access'
+  options:
+    parameters:
+      node:
+        type: entity:node
+node_recur.recur.confirm:
+  path: 'node/{node}/recur/confirm'
+  defaults:
+    _form: 'Drupal\node_recur\Form\NodeRecurConfirmForm'
+  requirements:
+    _custom_access: 'node_recur_node_recur_form_access'
+  options:
+    parameters:
+      node:
+        type: entity:node

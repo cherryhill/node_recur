@@ -1,0 +1,5 @@
+node_recur.recur:
+  title: 'Repeat'
+  route_name: node_recur.recur
+  base_route: entity.node.canonical
+  weight: 1

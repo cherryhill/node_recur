@@ -1,0 +1,6 @@
+node_recur:
+  version: 1.x
+  js:
+    js/node_recur.js: {}
+  dependencies:
+    - core/jquery
