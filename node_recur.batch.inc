@@ -25,7 +25,7 @@ function node_recur_node_batch_start($node, $start_dates, $end_dates) {
     'title' => t('Generating items'),
     'operations' => $operations,
     'finished' => 'node_recur_node_batch_finished',
-    'file' => drupal_get_path('module', 'node_recur') . '/node_recur.batch.inc',
+    'file' => \Drupal::service('extension.list.module')->getPath('node_recur') . '/node_recur.batch.inc',
   );
 
   // Store working node to redirect back to when finished.
