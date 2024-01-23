@@ -171,7 +171,6 @@ function node_recur_get_node_date_field_value($node, bool $start = TRUE) {
     $key = $start ? 'value' : 'end_value';
     $field = $node->get($field_name)->getValue();
     if (isset($field[0][$key])) {
-      // return $field[0][$key];
       return (string) new Drupal\Core\Datetime\DrupalDateTime($field[0][$key], 'UTC');
     }
   }

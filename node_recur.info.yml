@@ -1,6 +1,5 @@
-name: 'Node recur'
-description: 'Recur nodes based on time criteria'
+name: Node recur
+description: Recur nodes based on time criteria
 package: Date
 type: module
-core: 8.x
-core_version_requirement: ^8 || ^9
+core_version_requirement: ">=9.3"
