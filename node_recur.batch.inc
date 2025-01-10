@@ -57,13 +57,13 @@ function node_recur_node_batch_create_node($node, $start_date, $end_date, &$cont
   switch ($field_info->getType()) {
     case 'daterange':
       $value = [
-        'value' => Drupal::service('date.formatter')->format($start_date, 'custom', 'Y-m-d\TH:i:s'),
-        'end_value' => Drupal::service('date.formatter')->format($end_date, 'custom', 'Y-m-d\TH:i:s'),
+        'value' => Drupal::service('date.formatter')->format($start_date, 'custom', 'Y-m-d\TH:i:s', 'UTC'),
+        'end_value' => Drupal::service('date.formatter')->format($end_date, 'custom', 'Y-m-d\TH:i:s', 'UTC'),
       ];
       break;
     case 'datetime':
     default:
-      $value = Drupal::service('date.formatter')->format($start_date, 'custom', 'Y-m-d\TH:i:s');
+      $value = Drupal::service('date.formatter')->format($start_date, 'custom', 'Y-m-d\TH:i:s', 'UTC');
       break;
   }
 
