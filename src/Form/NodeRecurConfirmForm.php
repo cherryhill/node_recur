@@ -5,7 +5,9 @@ namespace Drupal\node_recur\Form;
 use Drupal;
 use Drupal\Core\Form\ConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\TempStore\PrivateTempStoreFactory;
 use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
@@ -16,9 +18,35 @@ class NodeRecurConfirmForm extends ConfirmFormBase {
   /**
    * The working node.
    *
-   * @var
+   * @var \Drupal\node\NodeInterface
    */
   public $node;
+
+  /**
+   * The private tempstore factory.
+   *
+   * @var \Drupal\Core\TempStore\PrivateTempStoreFactory
+   */
+  protected $tempStoreFactory;
+
+  /**
+   * NodeRecurConfirmForm constructor.
+   *
+   * @param \Drupal\Core\TempStore\PrivateTempStoreFactory $temp_store_factory
+   *   The private tempstore factory.
+   */
+  public function __construct(PrivateTempStoreFactory $temp_store_factory) {
+    $this->tempStoreFactory = $temp_store_factory;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('tempstore.private')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -61,13 +89,13 @@ class NodeRecurConfirmForm extends ConfirmFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $node = NULL, $dates = NULL) {
     $this->node = $node;
-    $tempstore = Drupal::service('tempstore.private')->get('node_recur');
+    $tempstore = $this->tempStoreFactory->get('node_recur');
     $dates = $tempstore->get('dates');
 
     // Make sure we have dates to work with
     if (empty($dates['start'])) {
-      Drupal::messenger()->addWarning($this->t('No dates were generated with the information you supplied.'));
-      return new RedirectResponse($this->getCancelUrl()->toString());
+      $this->messenger()->addWarning($this->t('No dates were generated with the information you supplied.'));
+      return new RedirectResponse($this->getCancelUrl()->setAbsolute()->toString());
     }
 
     // Store the dates and node
@@ -95,7 +123,7 @@ class NodeRecurConfirmForm extends ConfirmFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $node = $this->node;
     // Log this action
-    Drupal::logger('node_recur')->notice('Recurring the %type "%title" %count times.',
+    $this->logger('node_recur')->notice('Recurring the %type "%title" %count times.',
       array(
         '%type' => $node->getType(),
         '%title' => $node->getTitle(),
@@ -103,7 +131,7 @@ class NodeRecurConfirmForm extends ConfirmFormBase {
       )
     );
     // Start the batch
-    module_load_include('inc', 'node_recur', 'node_recur.batch');
+    \Drupal::moduleHandler()->loadInclude('node_recur', 'inc', 'node_recur.batch');
     node_recur_node_batch_start($node, $form['#start_dates'], $form['#end_dates']);
   }
 }

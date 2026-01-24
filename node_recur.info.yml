@@ -2,4 +2,4 @@ name: Node recur
 description: Recur nodes based on time criteria
 package: Date
 type: module
-core_version_requirement: ">=9.3"
+core_version_requirement: ">=9.3 || ^10 || ^11"

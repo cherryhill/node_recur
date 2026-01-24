@@ -25,7 +25,7 @@ function node_recur_form_node_form_alter(&$form, &$form_state, $form_id) {
       if (node_recur_node_form_enabled($node->getType())) {
         // Make sure recurring is enabled for this node
         if (node_recur_recurring_enabled($node->getType())) {
-          $node_recur_form_object = new NodeRecurForm();
+          $node_recur_form_object = \Drupal::classResolver()->getInstanceFromDefinition(NodeRecurForm::class);
           // Get the date field name
           $date_field = node_recur_get_date_field_name($node->getType());
           // Get the recur form
@@ -56,7 +56,7 @@ function node_recur_form_node_form_alter(&$form, &$form_state, $form_id) {
  */
 function node_recur_node_recur_form_access(Node $node) {
   $access = FALSE;
-  $user = Drupal::currentUser();
+  $user = \Drupal::currentUser();
 
   // See if recurring is enabled for this node
   if (node_recur_recurring_enabled($node->getType())) {
@@ -74,7 +74,7 @@ function node_recur_node_recur_form_access(Node $node) {
     }
 
     // Allow modules to alter this
-    Drupal::moduleHandler()->alter('node_recur_access', $access, $node);
+    \Drupal::moduleHandler()->alter('node_recur_access', $access, $node);
   }
 
   return AccessResult::allowedIf($access);
@@ -147,7 +147,7 @@ function node_recur_max_future_date_span($type) {
 function node_recur_get_date_field_name($type) {
   if ($field_name = NodeType::load($type)->getThirdPartySetting('node_recur', 'date_field')) {
     // Check that the field still exists
-    if (Drupal::config('field.storage.node.' . $field_name)->get()) {
+    if (\Drupal::config('field.storage.node.' . $field_name)->get()) {
       return $field_name;
     }
   }
@@ -192,7 +192,7 @@ function node_recur_form_node_type_form_alter(&$form, &$form_state) {
 
   // Determine the available date fields on this node type
   $fields = array();
-  $instances = Drupal::service('entity_field.manager')->getFieldDefinitions('node', $type);
+  $instances = \Drupal::service('entity_field.manager')->getFieldDefinitions('node', $type);
   if (isset($instances)) {
     foreach ($instances as $name => $field) {
       if (in_array($field->getType(), ['datetime', 'daterange'])) {
@@ -325,7 +325,7 @@ function node_recur_generate_dates_rule($node, $date, $frequency, $period, $unti
   // Iterate and generate dates until we reach the end
   while (TRUE) {
     // Generate the next date
-    $next = strtotime("+$frequency " . Drupal::translation()->formatPlural($frequency, $period, "{$period}s"), $current);
+    $next = strtotime("+$frequency " . \Drupal::translation()->formatPlural($frequency, $period, "{$period}s"), $current);
 
     // If this is a month recur, we need to make sure the the next date
     // is on the next month. Some months have 5 repeats of the same day
@@ -337,7 +337,7 @@ function node_recur_generate_dates_rule($node, $date, $frequency, $period, $unti
     $current = $next;
 
     // Make sure date is in the future, if the settings dictate that
-    if (!node_recur_allow_past_dates($node->getType()) && $next < Drupal::time()->getRequestTime()) {
+    if (!node_recur_allow_past_dates($node->getType()) && $next < \Drupal::time()->getRequestTime()) {
       continue;
     }
 
@@ -455,7 +455,7 @@ function node_recur_generate_dates_days($node, $date, $days, $until, $offset = N
       }
 
       // Make sure date is in the future, if the settings dictate that
-      if (!node_recur_allow_past_dates($node->getType()) && $date_to_use < Drupal::time()->getRequestTime()) {
+      if (!node_recur_allow_past_dates($node->getType()) && $date_to_use < \Drupal::time()->getRequestTime()) {
         continue;
       }
 
@@ -561,7 +561,7 @@ function node_recur_generate_dates_from_form($node, $form_state) {
       'weekends' => $weekends,
     );
   }
-  Drupal::moduleHandler()->alter('node_recur_dates', $dates, $variables);
+  \Drupal::moduleHandler()->alter('node_recur_dates', $dates, $variables);
 
   return $dates;
 }
@@ -584,13 +584,13 @@ function node_recur_format_date($start, $end = NULL, string $format = 'long') {
 
   // Convert start to timestamp, if needed, then format
   $start = is_string($start) ? strtotime($start) : $start;
-  $start = Drupal::service('date.formatter')->format($start, $format);
+  $start = \Drupal::service('date.formatter')->format($start, $format);
   $string .= $start;
 
   // Convert end to timestamp, if needed, then format
   if ($end) {
     $end = is_string($end) ? strtotime($end) : $end;
-    $end = Drupal::service('date.formatter')->format($end, $format);
+    $end = \Drupal::service('date.formatter')->format($end, $format);
     if ($start != $end) {
       $string .= ' - ' . $end;
     }
@@ -636,20 +636,20 @@ function _node_recur_form_validate_form(array &$form, FormStateInterface $form_s
     return;
   }
   // Make sure until date is in the future
-  if (!node_recur_allow_past_dates($node->getType()) && ($until < Drupal::time()->getRequestTime())) {
+  if (!node_recur_allow_past_dates($node->getType()) && ($until < \Drupal::time()->getRequestTime())) {
     $form_state->setErrorByName('until', t('The end date must be in the future.'));
   }
   // Check that until date isn't too far in the future, according
   // to node settings (if any)
   if ($max = node_recur_max_future_date_span($node->getType())) {
-    if ($until > strtotime($max, Drupal::time()->getRequestTime())) {
+    if ($until > strtotime($max, \Drupal::time()->getRequestTime())) {
       $form_state->setErrorByName('until', t('The end date can only be up to %max in the future.', array('%max' => $max)));
     }
   }
 
   // If there were no errors, allow other modules to validate the dates
   if (!$form_state->getErrors()) {
-    $errors = Drupal::moduleHandler()->invokeAll('node_recur_validate_dates', [$node, $form_state]);
+    $errors = \Drupal::moduleHandler()->invokeAll('node_recur_validate_dates', [$node, $form_state]);
     foreach ($errors as $error) {
       $form_state->setErrorByName($error['field'], $error['message']);
     }
@@ -660,7 +660,7 @@ function _node_recur_form_submit_form(array &$form, FormStateInterface $form_sta
   $node = $form['#node'] ?? $form_state->getFormObject()->getEntity();
 
   // Store the dates to which to copy this node.
-  $tempstore = Drupal::service('tempstore.private')->get('node_recur');
+  $tempstore = \Drupal::service('tempstore.private')->get('node_recur');
   $tempstore->set('dates', node_recur_generate_dates_from_form($node, $form_state));
 
   // Redirect to the confirm form

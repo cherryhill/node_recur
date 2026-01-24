@@ -29,7 +29,7 @@ function node_recur_node_batch_start($node, $start_dates, $end_dates) {
   );
 
   // Store working node to redirect back to when finished.
-  $tempstore = Drupal::service('tempstore.private')->get('node_recur');
+  $tempstore = \Drupal::service('tempstore.private')->get('node_recur');
   $tempstore->set('node', $node);
 
   batch_set($batch);
@@ -57,13 +57,13 @@ function node_recur_node_batch_create_node($node, $start_date, $end_date, &$cont
   switch ($field_info->getType()) {
     case 'daterange':
       $value = [
-        'value' => Drupal::service('date.formatter')->format($start_date, 'custom', 'Y-m-d\TH:i:s', 'UTC'),
-        'end_value' => Drupal::service('date.formatter')->format($end_date, 'custom', 'Y-m-d\TH:i:s', 'UTC'),
+        'value' => \Drupal::service('date.formatter')->format($start_date, 'custom', 'Y-m-d\TH:i:s', 'UTC'),
+        'end_value' => \Drupal::service('date.formatter')->format($end_date, 'custom', 'Y-m-d\TH:i:s', 'UTC'),
       ];
       break;
     case 'datetime':
     default:
-      $value = Drupal::service('date.formatter')->format($start_date, 'custom', 'Y-m-d\TH:i:s', 'UTC');
+      $value = \Drupal::service('date.formatter')->format($start_date, 'custom', 'Y-m-d\TH:i:s', 'UTC');
       break;
   }
 
@@ -82,21 +82,21 @@ function node_recur_node_batch_create_node($node, $start_date, $end_date, &$cont
 function node_recur_node_batch_finished($success, $results, $operations) {
   if ($success) {
     $count = count($results);
-    Drupal::messenger()->addMessage(t('%count %items have been generated.',
+    \Drupal::messenger()->addMessage(t('%count %items have been generated.',
       array(
         '%count' => $count,
-        '%items' => Drupal::translation()->formatPlural($count, 'item', 'items')
+        '%items' => \Drupal::translation()->formatPlural($count, 'item', 'items')
       )
     ));
   }
   else {
-    Drupal::messenger()->addError(t('An error occurred. Please try again.'));
+    \Drupal::messenger()->addError(t('An error occurred. Please try again.'));
   }
 
   // Determine where to redirect to
-  $tempstore = Drupal::service('tempstore.private')->get('node_recur');
+  $tempstore = \Drupal::service('tempstore.private')->get('node_recur');
   $url = URL::fromRoute('entity.node.canonical', ['node' => $tempstore->get('node')->id()]);
   // Allow modules to alter the path
-  Drupal::moduleHandler()->alter('node_recur_batch_redirect', $url, $node);
-  return new RedirectResponse($url->toString());
+  \Drupal::moduleHandler()->alter('node_recur_batch_redirect', $url, $node);
+  return new RedirectResponse($url->setAbsolute()->toString());
 }

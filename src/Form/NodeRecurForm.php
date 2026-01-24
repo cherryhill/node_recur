@@ -2,14 +2,42 @@
 
 namespace Drupal\node_recur\Form;
 
-use Drupal;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\TempStore\PrivateTempStoreFactory;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Form to copy a node based on a repeating date.
  */
 class NodeRecurForm extends FormBase {
+
+  /**
+   * The private tempstore factory.
+   *
+   * @var \Drupal\Core\TempStore\PrivateTempStoreFactory
+   */
+  protected $tempStoreFactory;
+
+  /**
+   * NodeRecurForm constructor.
+   *
+   * @param \Drupal\Core\TempStore\PrivateTempStoreFactory $temp_store_factory
+   *   The private tempstore factory.
+   */
+  public function __construct(PrivateTempStoreFactory $temp_store_factory) {
+    $this->tempStoreFactory = $temp_store_factory;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('tempstore.private')
+    );
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -117,6 +145,7 @@ class NodeRecurForm extends FormBase {
       '#title' => $this->t('Recur until'),
       '#description' => $this->t('Repeat this class until the specified date.'),
       '#required' => TRUE,
+      '#attributes' => ['min' => date('Y-m-d')],
     );
     if ($max = node_recur_max_future_date_span($type)) {
       $form['until']['#description'] .= '&nbsp;' . $this->t('This date can only be up to %max in the future.', array('%max' => $max));
@@ -138,6 +167,15 @@ class NodeRecurForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    return _node_recur_form_submit_form($form, $form_state);
+    $node = $form['#node'] ?? $form_state->getFormObject()->getEntity();
+
+    // Store the dates to which to copy this node.
+    $tempstore = $this->tempStoreFactory->get('node_recur');
+    $tempstore->set('dates', node_recur_generate_dates_from_form($node, $form_state));
+
+    // Redirect to the confirm form
+    if ($form_state->getValue('option') != 'none') {
+      $form_state->setRedirect('node_recur.recur.confirm', ['node' => $node->id()]);
+    }
   }
 }
