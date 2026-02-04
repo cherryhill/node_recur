@@ -408,46 +408,48 @@ function node_recur_generate_dates_days($node, $date, $days, $until, $offset = N
   // Track the current date
   $current = $date;
 
-  // Determine which day to start with which would be the closest
-  // "next" day, ie, depending on the initial date, next friday
-  // may be sooner than next monday.
-  $first_day = NULL;
+  // We want to find occurrences of $days after $date until $until.
+  // The original logic tried to find the "next" occurrence of each day,
+  // but it had issues with year jumps and skipping the remainder of the first week.
+
+  // Create an array of day names to their numeric representation (0-6, sun-sat)
+  $day_map = [
+    'sunday' => 0,
+    'monday' => 1,
+    'tuesday' => 2,
+    'wednesday' => 3,
+    'thursday' => 4,
+    'friday' => 5,
+    'saturday' => 6,
+  ];
+  $target_days = [];
   foreach ($days as $day) {
-    // Determine how many days until the next "day"
-    $z = date('z', strtotime("next $day", $current));
-    if (!$first_day || $z < $first_day) {
-      $first_day = $z;
+    if (isset($day_map[strtolower($day)])) {
+      $target_days[] = $day_map[strtolower($day)];
     }
   }
 
-  // Iterate and generate dates until we reach the end
+  if (empty($target_days)) {
+    return FALSE;
+  }
+
+  // Iterate day by day from $current until $until
   while (TRUE) {
-    foreach ($days as $day) {
-      // Determine how many days until the next "day"
-      $next_day = date('z', strtotime("next $day", $current));
-      $days_apart = $next_day - date('z', $current);
+    // Move to next day
+    $current += 86400;
 
-      // If days apart is negative, we've jumped to a new year
-      if ($days_apart < 0) {
-        // Use 366 instead of 365 because the first day is 1, not 0
-        $days_apart += 366;
-      }
+    // Make sure the hours match, to avoid DST issue
+    $current_hour = date('G', $current);
+    if ($current_hour != $hour) {
+      $current += (($hour - $current_hour) * 3600);
+    }
 
-      // Apply the day differential
-      $current += ($days_apart * 86400);
+    if ($current > $until) {
+      break;
+    }
 
-      // Make sure the hours match, to avoid DST issue
-      $current_hour = date('G', $current);
-      if ($current_hour != $hour) {
-        // Adjust to match
-        $current += (($hour - $current_hour) * 3600);
-      }
-
-      // See if this date puts us past the limit
-      if ($current > $until) {
-        break 2;
-      }
-
+    $current_day_of_week = (int) date('w', $current);
+    if (in_array($current_day_of_week, $target_days)) {
       // Apply the offset, if one
       $date_to_use = $current;
       if ($offset) {
@@ -458,12 +460,6 @@ function node_recur_generate_dates_days($node, $date, $days, $until, $offset = N
       if (!node_recur_allow_past_dates($node->getType()) && $date_to_use < \Drupal::time()->getRequestTime()) {
         continue;
       }
-
-      // See if we have to skip until we use the first day
-      if ($first_day && ($first_day != $next_day) && $first_day > $next_day) {
-        continue;
-      }
-      $first_day = NULL;
 
       $dates[] = $date_to_use;
     }
