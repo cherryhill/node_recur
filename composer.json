@@ -1,13 +1,7 @@
 {
     "name": "cherryhill/node_recur",
-    "description": "Continuation of the node_recur module for Drupal 7",
-    "type": "drupal-module",
+    "description": "Recur nodes based on time criteria",
+    "type": "drupal-custom-module",
     "license": "GPL-2.0-or-later",
-    "minimum-stability": "dev",
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://packages.drupal.org/8"
-        }
-    ]
+    "minimum-stability": "dev"
 }
